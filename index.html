@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>⚽ Football Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --card: #151e2e;
+    --card2: #1a2540;
+    --border: #1f2d45;
+    --accent: #00e5a0;
+    --accent2: #0af;
+    --live: #ff4444;
+    --yellow: #ffd600;
+    --text: #e8edf8;
+    --muted: #6b7fa3;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ───── HEADER ───── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,14,26,.92);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+  }
+  .header-inner {
+    max-width: 700px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 58px;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 1.8rem; letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .live-dot {
+    display: flex; align-items: center; gap: 7px;
+    font-size: .78rem; font-weight: 600; color: var(--live);
+    letter-spacing: 1px;
+  }
+  .live-dot::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--live);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,68,68,.5); }
+    50% { box-shadow: 0 0 0 6px rgba(255,68,68,0); }
+  }
+
+  /* ───── API KEY BANNER ───── */
+  #api-setup {
+    max-width: 700px; margin: 24px auto 0; padding: 0 16px;
+  }
+  .setup-card {
+    background: linear-gradient(135deg, #0d1a2e, #0f2042);
+    border: 1px solid rgba(0,229,160,.25);
+    border-radius: 16px; padding: 20px 22px;
+  }
+  .setup-card h2 { font-size: 1rem; margin-bottom: 6px; color: var(--accent); }
+  .setup-card p { font-size: .82rem; color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+  .setup-card a { color: var(--accent2); }
+  .key-row { display: flex; gap: 10px; }
+  .key-row input {
+    flex: 1; background: rgba(255,255,255,.05); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; color: var(--text);
+    font-family: var(--font-body); font-size: .9rem; outline: none;
+    transition: border-color .2s;
+  }
+  .key-row input:focus { border-color: var(--accent); }
+  .btn-go {
+    background: linear-gradient(135deg, var(--accent), #00c87a);
+    border: none; border-radius: 10px; padding: 10px 20px;
+    color: #0a0e1a; font-family: var(--font-body);
+    font-weight: 700; font-size: .9rem; cursor: pointer;
+    white-space: nowrap; transition: opacity .2s;
+  }
+  .btn-go:hover { opacity: .85; }
+
+  /* ───── FILTER BAR ───── */
+  #main { max-width: 700px; margin: 0 auto; padding: 0 16px 100px; }
+  .filter-bar {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 18px 0 4px; scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 50px; padding: 6px 14px;
+    font-size: .8rem; font-weight: 500; cursor: pointer;
+    transition: all .2s; color: var(--muted);
+  }
+  .chip.active, .chip:hover {
+    background: var(--accent); border-color: var(--accent);
+    color: #0a0e1a; font-weight: 700;
+  }
+
+  /* ───── DATE STRIP ───── */
+  .date-strip {
+    text-align: center; padding: 8px 0 20px;
+    font-size: .78rem; color: var(--muted); letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .date-strip span { color: var(--text); font-weight: 600; }
+
+  /* ───── SECTION TITLE ───── */
+  .section-title {
+    font-family: var(--font-display); font-size: 1.4rem;
+    letter-spacing: 2px; color: var(--muted);
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 12px;
+  }
+  .section-title .badge {
+    background: var(--live); color: #fff;
+    font-family: var(--font-body); font-size: .7rem;
+    font-weight: 700; padding: 2px 8px; border-radius: 50px;
+    letter-spacing: .5px;
+  }
+  .section-title .badge.green {
+    background: var(--accent); color: #0a0e1a;
+  }
+
+  /* ───── LEAGUE GROUP ───── */
+  .league-group { margin-bottom: 22px; }
+  .league-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px;
+    background: var(--card2); border-radius: 10px 10px 0 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .league-flag { font-size: 1.1rem; }
+  .league-name { font-size: .82rem; font-weight: 600; letter-spacing: .5px; }
+  .league-country { font-size: .75rem; color: var(--muted); margin-left: auto; }
+
+  /* ───── MATCH CARD ───── */
+  .match-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-top: none; cursor: pointer;
+    transition: background .18s;
+    overflow: hidden;
+  }
+  .match-card:last-child { border-radius: 0 0 10px 10px; }
+  .match-card:hover { background: var(--card2); }
+
+  .match-main {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px; padding: 14px 16px;
+  }
+  .team { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .team-home { align-items: flex-end; }
+  .team-away { align-items: flex-start; }
+  .team-crest {
+    width: 38px; height: 38px; border-radius: 50%;
+    object-fit: contain; background: rgba(255,255,255,.04);
+    padding: 3px;
+    border: 1px solid var(--border);
+  }
+  .team-name {
+    font-size: .78rem; font-weight: 600;
+    text-align: center; line-height: 1.3;
+    max-width: 90px;
+  }
+
+  .score-box { text-align: center; }
+  .score {
+    font-family: var(--font-display); font-size: 2.2rem;
+    line-height: 1; letter-spacing: 3px;
+  }
+  .score.live { color: var(--accent); }
+  .score.fin { color: var(--muted); }
+  .score.vs { font-size: 1.1rem; color: var(--muted); letter-spacing: 1px; }
+
+  .match-time {
+    font-size: .72rem; font-weight: 600;
+    margin-top: 3px; letter-spacing: .5px;
+  }
+  .match-time.live { color: var(--live); }
+  .match-time.fin { color: var(--muted); }
+  .match-time.sched { color: var(--accent2); }
+  .match-time.ht { color: var(--yellow); }
+
+  /* ───── STATS PANEL ───── */
+  .stats-panel {
+    display: none;
+    background: rgba(0,0,0,.3);
+    border-top: 1px solid var(--border);
+    padding: 16px;
+    animation: slideDown .2s ease;
+  }
+  @keyframes slideDown {
+    from { opacity:0; transform: translateY(-8px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .match-card.open .stats-panel { display: block; }
+
+  .stat-row {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat-row:last-child { margin-bottom: 0; }
+  .stat-val-home { text-align: right; font-size: .82rem; font-weight: 600; }
+  .stat-val-away { text-align: left; font-size: .82rem; font-weight: 600; }
+  .stat-label { font-size: .7rem; color: var(--muted); text-align: center; text-transform: uppercase; letter-spacing: .5px; min-width: 90px; }
+
+  .stat-bar-wrap { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .stat-bar-label { font-size: .68rem; color: var(--muted); text-align: center; text-transform: uppercase; letter-spacing: .5px; }
+  .bar-row { display: flex; height: 5px; border-radius: 5px; overflow: hidden; gap: 2px; }
+  .bar-h { background: var(--accent); border-radius: 5px 0 0 5px; transition: width .5s; }
+  .bar-a { background: var(--accent2); border-radius: 0 5px 5px 0; flex: 1; transition: width .5s; }
+
+  .events-title {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 10px; margin-top: 14px;
+  }
+  .event-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .78rem; margin-bottom: 7px; color: var(--text);
+  }
+  .event-time { color: var(--accent); font-weight: 700; min-width: 30px; }
+  .event-icon { font-size: 1rem; }
+  .event-player { font-weight: 500; }
+  .event-team-tag { margin-left: auto; font-size: .68rem; color: var(--muted); }
+
+  /* ───── SKELETON ───── */
+  .skeleton-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 16px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .skel { background: var(--card2); border-radius: 6px; animation: shimmer 1.5s infinite; }
+  @keyframes shimmer {
+    0%,100% { opacity: .6; } 50% { opacity: 1; }
+  }
+
+  /* ───── EMPTY / ERROR ───── */
+  .empty {
+    text-align: center; padding: 50px 20px; color: var(--muted);
+  }
+  .empty .emoji { font-size: 3rem; margin-bottom: 12px; }
+  .empty p { font-size: .9rem; line-height: 1.6; }
+
+  /* ───── BOTTOM NAV ───── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,14,26,.96);
+    backdrop-filter: blur(18px);
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-around;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; cursor: pointer; padding: 4px 14px;
+    font-size: .68rem; color: var(--muted); font-weight: 500;
+    transition: color .2s; border-radius: 8px;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item span { font-size: 1.3rem; }
+
+  /* ───── REFRESH BTN ───── */
+  .refresh-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 50px; padding: 7px 14px;
+    font-size: .78rem; color: var(--muted); cursor: pointer;
+    transition: all .2s; font-family: var(--font-body);
+    margin: 0 auto 18px;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn .ico { font-size: 1rem; }
+  .refresh-btn.spinning .ico { animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ───── TOAST ───── */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 50px; padding: 10px 18px;
+    font-size: .82rem; color: var(--text);
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+    white-space: nowrap; z-index: 200;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ───── RESPONSIVE ───── */
+  @media (min-width: 500px) {
+    .score { font-size: 2.6rem; }
+    .team-name { font-size: .85rem; max-width: 110px; }
+    .team-crest { width: 44px; height: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">FOOTBALL LIVE</div>
+    <div class="live-dot" id="liveIndicator" style="display:none">EN DIRECT</div>
+  </div>
+</header>
+
+<div id="api-setup">
+  <div class="setup-card">
+    <h2>🔑 Clé API requise</h2>
+    <p>
+      Obtenez une clé gratuite sur
+      <a href="https://www.football-data.org/client/register" target="_blank">football-data.org</a>
+      (gratuit, inscription en 30 secondes) et collez-la ici pour voir les matchs en temps réel.
+    </p>
+    <div class="key-row">
+      <input type="text" id="apiKeyInput" placeholder="Collez votre clé API ici…" />
+      <button class="btn-go" onclick="startApp()">Charger ▶</button>
+    </div>
+  </div>
+</div>
+
+<div id="main" style="display:none">
+  <div class="filter-bar" id="filterBar">
+    <div class="chip active" data-filter="ALL" onclick="setFilter('ALL',this)">🌍 Tous</div>
+    <div class="chip" data-filter="LIVE" onclick="setFilter('LIVE',this)">🔴 En direct</div>
+    <div class="chip" data-filter="SCHEDULED" onclick="setFilter('SCHEDULED',this)">🕐 À venir</div>
+    <div class="chip" data-filter="FINISHED" onclick="setFilter('FINISHED',this)">✅ Terminé</div>
+  </div>
+
+  <div class="date-strip" id="dateStrip"></div>
+
+  <button class="refresh-btn" id="refreshBtn" onclick="loadMatches()">
+    <span class="ico">↻</span> Actualiser
+  </button>
+
+  <div id="content"></div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="scrollTop()">
+    <span>⚽</span> Matchs
+  </div>
+  <div class="nav-item" onclick="showSection('live')">
+    <span>📡</span> Direct
+  </div>
+  <div class="nav-item" onclick="showSection('fin')">
+    <span>🏁</span> Résultats
+  </div>
+  <div class="nav-item" onclick="showSection('sched')">
+    <span>📅</span> À venir
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let API_KEY = '18f8d0652bdb49948120489a17f78cc7';
+let allMatches = [];
+let currentFilter = 'ALL';
+let refreshTimer = null;
+
+const COMPETITION_FLAGS = {
+  'Premier League':       '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Championship':         '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Ligue 1':              '🇫🇷',
+  'Bundesliga':           '🇩🇪',
+  '2. Bundesliga':        '🇩🇪',
+  'La Liga':              '🇪🇸',
+  'Serie A':              '🇮🇹',
+  'Eredivisie':           '🇳🇱',
+  'Primeira Liga':        '🇵🇹',
+  'Championship':         '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'UEFA Champions League':'🏆',
+  'UEFA Europa League':   '🟠',
+  'UEFA Conference League':'🔵',
+  'FIFA World Cup':       '🌍',
+  'Copa del Rey':         '🇪🇸',
+  'DFB-Pokal':            '🇩🇪',
+  'Coupe de France':      '🇫🇷',
+  'FA Cup':               '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Coppa Italia':         '🇮🇹',
+  'Brazilian Série A':    '🇧🇷',
+  'Campeonato Brasileiro Série A':'🇧🇷',
+};
+
+// ── INIT ──────────────────────────────────────────────────────
+function startApp() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { showToast('❌ Entrez une clé API valide'); return; }
+  API_KEY = key;
+  localStorage.setItem('fb_api_key', key);
+  document.getElementById('api-setup').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  loadMatches();
+  // Auto refresh every 60s
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(loadMatches, 60000);
+}
+
+window.onload = () => {
+  document.getElementById('api-setup').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  updateDateStrip();
+  loadMatches();
+  refreshTimer = setInterval(loadMatches, 60000);
+};
+
+// ── LOAD ──────────────────────────────────────────────────────
+async function loadMatches() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+
+  const today = new Date().toISOString().split('T')[0];
+  // football-data.org supports ?token= param — avoids header CORS issues on mobile
+  const apiUrl = `https://api.football-data.org/v4/matches?dateFrom=${today}&dateTo=${today}&token=${API_KEY}`;
+
+  // Multiple CORS proxy fallbacks
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`,
+    `https://thingproxy.freeboard.io/fetch/${apiUrl}`,
+  ];
+
+  let lastError = 'Erreur réseau';
+  for (const proxyUrl of proxies) {
+    try {
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error('Réponse invalide'); }
+      if (data.errorCode || data.message?.includes('permission')) throw new Error('Clé API invalide');
+      allMatches = data.matches || [];
+      renderMatches();
+      checkLive();
+      showToast(`✅ ${allMatches.length} matchs chargés`);
+      btn.classList.remove('spinning');
+      return;
+    } catch (e) {
+      lastError = e.message;
+      if (e.message.includes('invalide')) break;
+    }
+  }
+  renderError('❌ ' + lastError + '<br><small style="color:var(--muted)">Vérifiez votre connexion internet</small>');
+  showToast('❌ ' + lastError);
+  btn.classList.remove('spinning');
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderMatches() {
+  const content = document.getElementById('content');
+  let matches = [...allMatches];
+
+  if (currentFilter === 'LIVE') {
+    matches = matches.filter(m => ['IN_PLAY','HALFTIME','PAUSED'].includes(m.status));
+  } else if (currentFilter === 'SCHEDULED') {
+    matches = matches.filter(m => ['SCHEDULED','TIMED'].includes(m.status));
+  } else if (currentFilter === 'FINISHED') {
+    matches = matches.filter(m => m.status === 'FINISHED');
+  }
+
+  if (!matches.length) {
+    content.innerHTML = `
+      <div class="empty">
+        <div class="emoji">📭</div>
+        <p>Aucun match trouvé pour ce filtre aujourd'hui.</p>
+      </div>`;
+    return;
+  }
+
+  // Group by competition
+  const groups = {};
+  matches.forEach(m => {
+    const comp = m.competition?.name || 'Autre';
+    if (!groups[comp]) groups[comp] = { competition: m.competition, matches: [] };
+    groups[comp].matches.push(m);
+  });
+
+  // Sort: live first, then scheduled, then finished
+  const statusOrder = { 'IN_PLAY':0,'HALFTIME':0,'PAUSED':0,'TIMED':1,'SCHEDULED':1,'FINISHED':2 };
+
+  // Live section
+  const liveMatches = matches.filter(m => ['IN_PLAY','HALFTIME','PAUSED'].includes(m.status));
+  const schedMatches = matches.filter(m => ['SCHEDULED','TIMED'].includes(m.status));
+  const finMatches = matches.filter(m => m.status === 'FINISHED');
+
+  let html = '';
+
+  if (currentFilter === 'ALL' || currentFilter === 'LIVE') {
+    if (liveMatches.length) {
+      html += `<div class="section-title" id="sec-live">EN DIRECT <span class="badge">${liveMatches.length}</span></div>`;
+      html += renderGroup(groupByComp(liveMatches));
+    }
+  }
+  if (currentFilter === 'ALL' || currentFilter === 'SCHEDULED') {
+    if (schedMatches.length) {
+      html += `<div class="section-title" id="sec-sched">À VENIR <span class="badge green">${schedMatches.length}</span></div>`;
+      html += renderGroup(groupByComp(schedMatches));
+    }
+  }
+  if (currentFilter === 'ALL' || currentFilter === 'FINISHED') {
+    if (finMatches.length) {
+      html += `<div class="section-title" id="sec-fin">TERMINÉS <span class="badge" style="background:var(--muted)">${finMatches.length}</span></div>`;
+      html += renderGroup(groupByComp(finMatches));
+    }
+  }
+
+  content.innerHTML = html;
+}
+
+function groupByComp(arr) {
+  const g = {};
+  arr.forEach(m => {
+    const k = m.competition?.name || 'Autre';
+    if (!g[k]) g[k] = { competition: m.competition, matches: [] };
+    g[k].matches.push(m);
+  });
+  return g;
+}
+
+function renderGroup(groups) {
+  return Object.entries(groups).map(([name, g]) => {
+    const flag = COMPETITION_FLAGS[name] || '🏟️';
+    const country = g.competition?.area?.name || '';
+    const matchCards = g.matches.map(renderMatchCard).join('');
+    return `
+      <div class="league-group">
+        <div class="league-header">
+          <span class="league-flag">${flag}</span>
+          <span class="league-name">${name}</span>
+          <span class="league-country">${country}</span>
+        </div>
+        ${matchCards}
+      </div>`;
+  }).join('');
+}
+
+function renderMatchCard(m) {
+  const status = m.status;
+  const homeGoals = m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? null;
+  const awayGoals = m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? null;
+  const isLive = ['IN_PLAY','HALFTIME','PAUSED'].includes(status);
+  const isFin = status === 'FINISHED';
+
+  let scoreHtml = '';
+  let timeHtml = '';
+
+  if (isLive) {
+    const min = m.minute ? m.minute + "'" : (status === 'HALFTIME' ? 'Mi-Temps' : '...');
+    scoreHtml = `<div class="score live">${homeGoals ?? 0} : ${awayGoals ?? 0}</div>`;
+    timeHtml = `<div class="match-time live">${status === 'HALFTIME' ? '⏸ MI-TEMPS' : '▶ ' + min}</div>`;
+  } else if (isFin) {
+    scoreHtml = `<div class="score fin">${homeGoals ?? '-'} : ${awayGoals ?? '-'}</div>`;
+    timeHtml = `<div class="match-time fin">TERMINÉ</div>`;
+  } else {
+    const t = formatKickoff(m.utcDate);
+    scoreHtml = `<div class="score vs">VS</div>`;
+    timeHtml = `<div class="match-time sched">${t}</div>`;
+  }
+
+  const homeImg = `https://crests.football-data.org/${m.homeTeam?.id}.png`;
+  const awayImg = `https://crests.football-data.org/${m.awayTeam?.id}.png`;
+
+  const statsHtml = renderStatsPanel(m);
+
+  return `
+    <div class="match-card" onclick="toggleStats(this, '${m.id}')">
+      <div class="match-main">
+        <div class="team team-home">
+          <img class="team-crest" src="${homeImg}" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><text y=%2228%22 font-size=%2224%22>⚽</text></svg>'" />
+          <div class="team-name">${m.homeTeam?.shortName || m.homeTeam?.name || '?'}</div>
+        </div>
+        <div class="score-box">
+          ${scoreHtml}
+          ${timeHtml}
+        </div>
+        <div class="team team-away">
+          <img class="team-crest" src="${awayImg}" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><text y=%2228%22 font-size=%2224%22>⚽</text></svg>'" />
+          <div class="team-name">${m.awayTeam?.shortName || m.awayTeam?.name || '?'}</div>
+        </div>
+      </div>
+      ${statsHtml}
+    </div>`;
+}
+
+function renderStatsPanel(m) {
+  const events = (m.goals || []).concat(m.bookings || []).concat(m.substitutions || []);
+  
+  // Build events HTML
+  let evHtml = '';
+  const goals = m.goals || [];
+  const bookings = m.bookings || [];
+  
+  if (goals.length || bookings.length) {
+    evHtml += `<div class="events-title">📋 Événements</div>`;
+    goals.forEach(g => {
+      const icon = g.type === 'OWN_GOAL' ? '⚽🔴' : g.type === 'PENALTY' ? '⚽🎯' : '⚽';
+      const side = g.team?.id === m.homeTeam?.id ? m.homeTeam?.shortName : m.awayTeam?.shortName;
+      evHtml += `
+        <div class="event-item">
+          <span class="event-time">${g.minute}'</span>
+          <span class="event-icon">${icon}</span>
+          <span class="event-player">${g.scorer?.name || '?'}</span>
+          <span class="event-team-tag">${side || ''}</span>
+        </div>`;
+    });
+    bookings.forEach(b => {
+      const icon = b.card === 'YELLOW_CARD' ? '🟨' : '🟥';
+      const side = b.team?.id === m.homeTeam?.id ? m.homeTeam?.shortName : m.awayTeam?.shortName;
+      evHtml += `
+        <div class="event-item">
+          <span class="event-time">${b.minute}'</span>
+          <span class="event-icon">${icon}</span>
+          <span class="event-player">${b.player?.name || '?'}</span>
+          <span class="event-team-tag">${side || ''}</span>
+        </div>`;
+    });
+  }
+
+  // Scores breakdown
+  let scHtml = '';
+  const ht = m.score?.halfTime;
+  const ft = m.score?.fullTime;
+  if (ht?.home !== null && ht?.home !== undefined) {
+    scHtml += `
+      <div class="stat-row">
+        <div class="stat-val-home">${ht.home}</div>
+        <div class="stat-label">Mi-temps</div>
+        <div class="stat-val-away">${ht.away}</div>
+      </div>`;
+  }
+  if (ft?.home !== null && ft?.home !== undefined && m.status === 'FINISHED') {
+    scHtml += `
+      <div class="stat-row">
+        <div class="stat-val-home">${ft.home}</div>
+        <div class="stat-label">Score final</div>
+        <div class="stat-val-away">${ft.away}</div>
+      </div>`;
+  }
+
+  if (!scHtml && !evHtml) {
+    scHtml = `<div style="text-align:center;color:var(--muted);font-size:.8rem;padding:4px 0">Aucune statistique disponible</div>`;
+  }
+
+  return `<div class="stats-panel">${scHtml}${evHtml}</div>`;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function formatKickoff(utc) {
+  const d = new Date(utc);
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function updateDateStrip() {
+  const d = new Date();
+  const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+  const str = d.toLocaleDateString('fr-FR', opts);
+  document.getElementById('dateStrip').innerHTML = `<span>${str.charAt(0).toUpperCase()+str.slice(1)}</span>`;
+}
+
+function checkLive() {
+  const live = allMatches.filter(m => ['IN_PLAY','HALFTIME','PAUSED'].includes(m.status));
+  document.getElementById('liveIndicator').style.display = live.length ? 'flex' : 'none';
+}
+
+function toggleStats(card) {
+  card.classList.toggle('open');
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderMatches();
+}
+
+function scrollTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function showSection(sec) {
+  const ids = { live:'sec-live', fin:'sec-fin', sched:'sec-sched' };
+  const el = document.getElementById(ids[sec]);
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  else showToast('Aucun match dans cette section');
+}
+
+function renderError(msg) {
+  document.getElementById('content').innerHTML = `
+    <div class="empty">
+      <div class="emoji">⚠️</div>
+      <p>${msg}</p>
+    </div>`;
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
